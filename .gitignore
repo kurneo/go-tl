@@ -1,0 +1,13 @@
+vendor
+.idea
+
+storage/logs/*
+storage/app/*
+
+docker/.env
+
+config.yml
+
+migrations/.env
+
+/tmp
