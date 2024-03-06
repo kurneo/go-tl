@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"github.com/kurneo/go-template/config"
 	"github.com/kurneo/go-template/internal/admin/datasource"
 	"github.com/kurneo/go-template/internal/admin/usecase"
@@ -12,6 +13,7 @@ import (
 
 type Contract interface {
 	Start() error
+	Shutdown(ctx context.Context) error
 	GetConfig() *config.Config
 	GetLogger() logger.Contract
 	GetDB() database.Contract
@@ -29,6 +31,10 @@ type application struct {
 
 func (app *application) Start() error {
 	return app.echo.Start(":" + app.getHttpPort())
+}
+
+func (app *application) Shutdown(ctx context.Context) error {
+	return app.echo.Shutdown(ctx)
 }
 
 func (app *application) GetConfig() *config.Config {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/kurneo/go-template/cmd/app"
 	"github.com/kurneo/go-template/config"
 	"github.com/kurneo/go-template/internal/admin"
@@ -9,6 +10,11 @@ import (
 	"github.com/kurneo/go-template/pkg/database"
 	"github.com/kurneo/go-template/pkg/logger"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -49,9 +55,26 @@ func main() {
 		log.Fatalf("Register application module failed: %s", errApp)
 	}
 
-	errApp = application.Start()
-	if errApp != nil {
-		log.Fatalf("Start application failed: %s", errApp)
+	//Graceful Shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	go func() {
+		if err := application.Start(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("Shutting down the server")
+		}
+	}()
+	<-ctx.Done()
+	log.Println("Shutting down")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	log.Println("Stop http server")
+	if err := application.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Close database connection")
+	err := db.Close()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
