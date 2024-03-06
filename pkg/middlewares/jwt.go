@@ -1,59 +1,30 @@
 package middlewares
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/kurneo/go-template/config"
-	"github.com/kurneo/go-template/internal/admin/entities"
-	errPkg "github.com/kurneo/go-template/pkg/error"
 	httpPkg "github.com/kurneo/go-template/pkg/support/http"
+	jwtPkg "github.com/kurneo/go-template/pkg/support/jwt"
 	echoJwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
-type UseCase interface {
-	CheckToken(ctx context.Context, token string) (*entities.AdminAccessToken, errPkg.Contract)
-}
-
-func JwtMiddleware(cfg config.JWT, useCase UseCase) echo.MiddlewareFunc {
-	signingKey := []byte(cfg.Secret)
-
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		if token.Method.Alg() != echoJwt.AlgorithmHS256 {
-			return nil, fmt.Errorf("unexpected jwt signing method=%v", token.Header["alg"])
-		}
-		return signingKey, nil
-	}
-
+func JwtMiddleware(t jwtPkg.TokenManager[int64]) echo.MiddlewareFunc {
+	secret, _ := t.GetSecret()
 	return echoJwt.WithConfig(echoJwt.Config{
-		SigningKey: signingKey,
+		SigningKey: secret,
 		Skipper: func(c echo.Context) bool {
 			return false
 		},
 		TokenLookup: "header:Authorization:Bearer ,query:access_token",
-		ParseTokenFunc: func(c echo.Context, auth string) (interface{}, error) {
-			token, err := jwt.ParseWithClaims(auth, jwt.MapClaims{}, keyFunc)
+		ParseTokenFunc: func(c echo.Context, tokenString string) (interface{}, error) {
+			token, err := t.CheckToken(c.Request().Context(), tokenString)
 
 			if err != nil {
-				if err.Error() == "token contains an invalid number of segments" {
-					return nil, jwt.ErrTokenMalformed
-				}
 				return nil, err
 			}
 
-			if !token.Valid {
-				return nil, jwt.ErrTokenMalformed
-			}
-
-			t, errCheck := useCase.CheckToken(c.Request().Context(), auth)
-
-			if errCheck != nil {
-				return nil, errCheck.GetError()
-			}
-
-			c.Set("auth", t.Admin)
+			c.Set("auth", token)
 
 			return token, nil
 		},

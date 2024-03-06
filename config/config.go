@@ -10,6 +10,7 @@ type (
 		App     `yaml:"app"`
 		HTTP    `yaml:"http"`
 		Log     `yaml:"log"`
+		Redis   `yaml:"redis"`
 		DB      `yaml:"db"`
 		JWT     `yaml:"jwt"`
 		Storage `yaml:"storage"`
@@ -25,6 +26,11 @@ type (
 	JWT struct {
 		Secret  string `env-required:"true" yaml:"secret" env:"JWT_SECRET"`
 		Timeout string `env-required:"true" yaml:"timeout" env:"JWT_TIMEOUT"`
+	}
+
+	Redis struct {
+		Addr string `env-required:"true" yaml:"addr" env:"REDIS_ADDR"`
+		DB   string `env-required:"true" yaml:"db" env:"REDIS_DB"`
 	}
 
 	HTTP struct {

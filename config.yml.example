@@ -10,6 +10,10 @@ http:
   expose_header: "x-Total-Count,X-Total-Pages"
   allow_origin: "*"
 
+redis:
+  addr: "redis:6379"
+  db: "0"
+
 log:
   default: "stdout"
   level: "debug"

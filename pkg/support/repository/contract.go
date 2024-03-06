@@ -1,10 +1,14 @@
 package repository
 
-type Entity interface {
+type PrimaryKey = interface {
+	int64 | string
+}
+
+type Entity[P PrimaryKey] interface {
 	ToMap() map[string]interface{}
 }
 
-type Model[E Entity] interface {
+type Model[P PrimaryKey, E Entity[P]] interface {
 	ToEntity() *E
 	FromEntity(e E) interface{}
 	TableName() string

@@ -58,7 +58,7 @@ func (c controller) Get(context echo.Context) error {
 		return http.ResponseUnprocessableEntity(context, errGetId)
 	}
 
-	category, err := c.u.Get(context.Request().Context(), id)
+	category, err := c.u.Get(context.Request().Context(), int64(id))
 
 	if err != nil {
 		return http.ResponseError(context, err.GetMessage())
@@ -128,7 +128,7 @@ func (c controller) Update(context echo.Context) error {
 		return http.ResponseUnprocessableEntity(context, errorsValidate)
 	}
 
-	category, errGet := c.u.Get(context.Request().Context(), id)
+	category, errGet := c.u.Get(context.Request().Context(), int64(id))
 	if errGet != nil {
 		if errGet.IsDomainError() {
 			return http.ResponseBadRequest(context, errGet.GetMessage())
@@ -177,7 +177,7 @@ func (c controller) Delete(context echo.Context) error {
 		return http.ResponseUnprocessableEntity(context, errGetId)
 	}
 
-	category, errGet := c.u.Get(context.Request().Context(), id)
+	category, errGet := c.u.Get(context.Request().Context(), int64(id))
 	if errGet != nil {
 		if errGet.IsDomainError() {
 			return http.ResponseBadRequest(context, errGet.GetMessage())

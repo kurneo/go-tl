@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 	"github.com/kurneo/go-template/config"
-	"github.com/kurneo/go-template/internal/admin/datasource"
-	"github.com/kurneo/go-template/internal/admin/usecase"
 	"github.com/kurneo/go-template/pkg/database"
 	"github.com/kurneo/go-template/pkg/logger"
 	"github.com/kurneo/go-template/pkg/middlewares"
+	"github.com/kurneo/go-template/pkg/redis"
+	"github.com/kurneo/go-template/pkg/support/jwt"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,6 +17,7 @@ type Contract interface {
 	GetConfig() *config.Config
 	GetLogger() logger.Contract
 	GetDB() database.Contract
+	GetRedis() redis.Contact
 	GetHttpHandler() *echo.Echo
 	RegisterAdminV1Route(f func(group *echo.Group, jwtMiddleware echo.MiddlewareFunc))
 }
@@ -26,6 +27,7 @@ type application struct {
 	cfg           *config.Config
 	lg            logger.Contract
 	db            database.Contract
+	r             redis.Contact
 	jetMiddleware echo.MiddlewareFunc
 }
 
@@ -49,6 +51,10 @@ func (app *application) GetDB() database.Contract {
 	return app.db
 }
 
+func (app *application) GetRedis() redis.Contact {
+	return app.r
+}
+
 func (app *application) GetHttpHandler() *echo.Echo {
 	return app.echo
 }
@@ -62,7 +68,12 @@ func (app *application) RegisterAdminV1Route(f func(group *echo.Group, jwtMiddle
 	f(g, app.jetMiddleware)
 }
 
-func NewApplication(cfg *config.Config, lg logger.Contract, db database.Contract) (Contract, error) {
+func NewApplication(
+	cfg *config.Config,
+	lg logger.Contract,
+	db database.Contract,
+	r redis.Contact,
+) (Contract, error) {
 	echoApp := echo.New()
 	// configure global middleware here
 	echoApp.Use(
@@ -78,6 +89,7 @@ func NewApplication(cfg *config.Config, lg logger.Contract, db database.Contract
 		cfg:           cfg,
 		lg:            lg,
 		db:            db,
-		jetMiddleware: middlewares.JwtMiddleware(cfg.JWT, usecase.NewTokenManager(cfg.JWT, lg, datasource.NewTokenRepo(lg, db))),
+		r:             r,
+		jetMiddleware: middlewares.JwtMiddleware(jwt.NewTokenManager[int64](cfg.JWT, r)),
 	}, nil
 }

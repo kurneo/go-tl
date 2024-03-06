@@ -1,12 +1,13 @@
 package entities
 
 import (
+	"github.com/kurneo/go-template/pkg/support/repository"
 	"time"
 )
 
 type (
-	Admin struct {
-		ID          int        `json:"-"`
+	User[T repository.PrimaryKey] struct {
+		ID          T          `json:"-"`
 		Name        string     `json:"name"`
 		Email       string     `json:"email"`
 		Password    string     `json:"-"`
@@ -20,7 +21,7 @@ type (
 	}
 )
 
-func (a Admin) ToMap() map[string]interface{} {
+func (a User[T]) ToMap() map[string]interface{} {
 	user := map[string]interface{}{
 		"name":          a.Name,
 		"email":         a.Email,
@@ -29,6 +30,6 @@ func (a Admin) ToMap() map[string]interface{} {
 	return user
 }
 
-func (a Admin) CheckPassword(password string, checker PasswordCheckerContract) bool {
+func (a User[T]) CheckPassword(password string, checker PasswordCheckerContract) bool {
 	return checker.Check(a.Password, password)
 }

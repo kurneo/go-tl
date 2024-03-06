@@ -63,7 +63,7 @@ func (c catUseCase) Store(ctx context.Context, dto CategoryDTO) (*entities.Categ
 	return cat, nil
 }
 
-func (c catUseCase) Get(ctx context.Context, id int) (*entities.Category, error.Contract) {
+func (c catUseCase) Get(ctx context.Context, id int64) (*entities.Category, error.Contract) {
 	return c.r.Get(ctx, id)
 }
 

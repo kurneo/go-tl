@@ -11,7 +11,7 @@ import (
 )
 
 type CatRepo struct {
-	repository.Repository[models.Category, entities.Category]
+	repository.Repository[models.Category, entities.Category, int64]
 }
 
 func (r CatRepo) List(
@@ -64,7 +64,7 @@ func (r CatRepo) UpdateDefault(ctx context.Context, except *entities.Category) p
 	return nil
 }
 
-func (r CatRepo) Get(ctx context.Context, id int) (*entities.Category, pkgErr.Contract) {
+func (r CatRepo) Get(ctx context.Context, id int64) (*entities.Category, pkgErr.Contract) {
 	return r.FindByID(
 		ctx,
 		id,

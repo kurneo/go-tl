@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/kurneo/go-template/cmd/app"
 	"github.com/kurneo/go-template/config"
-	"github.com/kurneo/go-template/internal/admin"
+	"github.com/kurneo/go-template/internal/auth"
 	"github.com/kurneo/go-template/internal/category"
 	"github.com/kurneo/go-template/internal/finder"
 	"github.com/kurneo/go-template/pkg/database"
 	"github.com/kurneo/go-template/pkg/logger"
+	"github.com/kurneo/go-template/pkg/redis"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -39,13 +39,17 @@ func main() {
 			log.Fatalf("DB error: close connection failed: %s", errDB)
 		}
 	}()
-
 	if errDB != nil {
 		log.Fatalf("Init DB error: %s", errDB)
 	}
+	// Init redis
+	r, errR := redis.NewRedisClient(cfg.Redis)
+	if errDB != nil {
+		log.Fatalf("Init Redis client error: %s", errR)
+	}
 
 	// Create new application
-	application, errApp := app.NewApplication(cfg, lg, db)
+	application, errApp := app.NewApplication(cfg, lg, db, r)
 	if errApp != nil {
 		log.Fatalf("Create application module failed: %s", errApp)
 	}
@@ -56,7 +60,7 @@ func main() {
 	}
 
 	//Graceful Shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go func() {
 		if err := application.Start(); err != nil && err != http.ErrServerClosed {
@@ -79,7 +83,7 @@ func main() {
 }
 
 func registerModules(app app.Contract) error {
-	if err := admin.RegisterModule(app); err != nil {
+	if err := auth.RegisterModule(app); err != nil {
 		return err
 	}
 

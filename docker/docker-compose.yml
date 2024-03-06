@@ -37,7 +37,15 @@ services:
       - MINIO_ROOT_USER
       - MINIO_ROOT_PASSWORD
 
+  redis:
+    image: redis:latest
+    volumes:
+      - redis:/data
+    environment:
+      - REDIS_DATABASES
+
 
 volumes:
   postgres:
   minio:
+  redis:

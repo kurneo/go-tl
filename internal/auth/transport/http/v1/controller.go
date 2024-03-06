@@ -1,23 +1,22 @@
 package v1
 
 import (
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/kurneo/go-template/cmd/app"
-	"github.com/kurneo/go-template/internal/admin/entities"
-	"github.com/kurneo/go-template/internal/admin/usecase"
+	"github.com/kurneo/go-template/internal/auth/usecase"
 	"github.com/kurneo/go-template/pkg/logger"
 	"github.com/kurneo/go-template/pkg/support/http"
+	jwtPkg "github.com/kurneo/go-template/pkg/support/jwt"
 	"github.com/kurneo/go-template/pkg/support/validator"
 	"github.com/labstack/echo/v4"
 )
 
-type controller struct {
+type controller[T jwtPkg.SubType] struct {
 	a app.Contract
 	l logger.Contract
-	u usecase.AdminUseCaseContract
+	u usecase.UserUseCaseContract[T]
 }
 
-func (ctl controller) Login(context echo.Context) error {
+func (ctl controller[T]) Login(context echo.Context) error {
 	body, err := http.ParseFormData[LoginFormData](context)
 	if err != nil {
 		ctl.l.Error(err)
@@ -58,54 +57,30 @@ func (ctl controller) Login(context echo.Context) error {
 	return context.JSON(200, token)
 }
 
-func (ctl controller) Me(context echo.Context) error {
-	user := context.Get("auth").(*entities.Admin)
-	return http.ResponseOk(context, user.ToMap())
-}
-
-func (ctl controller) RefreshToken(context echo.Context) error {
-	token := (context.Get("user").(*jwt.Token)).Raw
-
-	errTrans := ctl.a.GetDB().Begin()
-	if errTrans != nil {
-		ctl.l.Error(errTrans)
-		return http.ResponseError(context, errTrans.Error())
-	}
-
-	authToken, err := ctl.u.RefreshToken(context.Request().Context(), token)
+func (ctl controller[T]) Me(context echo.Context) error {
+	auth := context.Get("auth").(*jwtPkg.AccessToken[T])
+	user, err := ctl.u.GetProfile(context.Request().Context(), auth.Sub)
 	if err != nil {
-		errTrans = ctl.a.GetDB().Rollback()
-		if errTrans != nil {
-			ctl.l.Error(errTrans)
-			return http.ResponseError(context, errTrans.Error())
-		}
 		return http.ResponseError(context, err.GetMessage())
 	}
-
-	errTrans = ctl.a.GetDB().Commit()
-	if errTrans != nil {
-		ctl.l.Error(errTrans)
-		return http.ResponseError(context, errTrans.Error())
-	}
-	return http.ResponseOk(context, authToken)
+	return http.ResponseOk(context, user)
 }
 
-func (ctl controller) Logout(context echo.Context) error {
-	token := (context.Get("user").(*jwt.Token)).Raw
-	err := ctl.u.Logout(context.Request().Context(), token)
+func (ctl controller[T]) Logout(context echo.Context) error {
+	auth := context.Get("auth").(*jwtPkg.AccessToken[T])
+	err := ctl.u.Logout(context.Request().Context(), auth)
 	if err != nil {
 		return http.ResponseError(context, err.GetMessage())
 	}
 	return http.ResponseOk(context, true)
 }
 
-func New(a app.Contract, u usecase.AdminUseCaseContract) {
-	c := &controller{l: a.GetLogger(), u: u, a: a}
+func New[T jwtPkg.SubType](a app.Contract, u usecase.UserUseCaseContract[T]) {
+	c := &controller[T]{l: a.GetLogger(), u: u, a: a}
 	a.RegisterAdminV1Route(func(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
 		g := group.Group("/auth")
 		g.POST("/login", c.Login)
 		g.GET("/me", c.Me, jwtMiddleware)
-		g.POST("/refresh-token", c.RefreshToken, jwtMiddleware)
 		g.POST("/logout", c.Logout, jwtMiddleware)
 	})
 }

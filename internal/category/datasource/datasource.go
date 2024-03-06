@@ -11,7 +11,7 @@ import (
 
 func NewCatRepo(l logger.Contract, db database.Contract) usecase.CategoryRepositoryContract {
 	return &CatRepo{
-		repository.Repository[models.Category, entities.Category]{
+		repository.Repository[models.Category, entities.Category, int64]{
 			D: db,
 			L: l,
 		},
