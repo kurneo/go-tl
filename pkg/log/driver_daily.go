@@ -3,13 +3,18 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"log"
 	"time"
 )
 
 type dailyDriver struct {
 	l *logrus.Logger
+	c DailyConfig
+}
+
+type DailyConfig struct {
+	FileName string
+	Level    string
 }
 
 func (d dailyDriver) Debug(args ...interface{}) {
@@ -80,7 +85,7 @@ func (d dailyDriver) getLogFilePath() string {
 }
 
 func (d dailyDriver) getLogFileName() string {
-	fileName := viper.GetString("LOG_DAILY_FILE_NAME")
+	fileName := d.c.FileName
 	if fileName == "" {
 		fileName = "app.log"
 	}
@@ -91,12 +96,13 @@ func (d dailyDriver) getLogFileName() string {
 	)
 }
 
-func newDailyDriver(l *logrus.Logger) (Contract, error) {
-	level := viper.GetString("LOG_DAILY_LOG_LEVEL")
+func newDailyDriver(l *logrus.Logger, c DailyConfig) (Contract, error) {
+	level := c.Level
 	if level != "" {
 		l.SetLevel(getLogLevel(level))
 	}
 	return &dailyDriver{
 		l: l,
+		c: c,
 	}, nil
 }

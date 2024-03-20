@@ -2,12 +2,16 @@ package log
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 )
 
 type stdoutDriver struct {
 	l *logrus.Logger
+	c StdOutConfig
+}
+
+type StdOutConfig struct {
+	Level string
 }
 
 func (d stdoutDriver) Debug(args ...interface{}) {
@@ -37,13 +41,14 @@ func (d stdoutDriver) getLog() *logrus.Entry {
 	return d.l.WithField("file", getCalledFile(3))
 }
 
-func newStdoutDriver(l *logrus.Logger) Contract {
-	level := viper.GetString("LOG_STDOUT_LOG_LEVEL")
+func newStdoutDriver(l *logrus.Logger, c StdOutConfig) Contract {
+	level := c.Level
 	if level != "" {
 		l.SetLevel(getLogLevel(level))
 	}
 	l.SetOutput(os.Stdout)
 	return &stdoutDriver{
 		l: l,
+		c: c,
 	}
 }

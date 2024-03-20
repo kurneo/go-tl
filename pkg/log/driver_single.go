@@ -3,12 +3,17 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"log"
 )
 
 type singleDriver struct {
 	l *logrus.Logger
+	c SingeConfig
+}
+
+type SingeConfig struct {
+	FileName string
+	Level    string
 }
 
 func (d singleDriver) Debug(args ...interface{}) {
@@ -52,7 +57,7 @@ func (d singleDriver) prepareLogFile() {
 }
 
 func (d singleDriver) getLogFilePath() string {
-	fileName := viper.GetString("LOG_SINGLE_FILE_NAME")
+	fileName := d.c.FileName
 	if fileName == "" {
 		fileName = "app.log"
 	}
@@ -64,12 +69,13 @@ func (d singleDriver) getLogFilePath() string {
 	)
 }
 
-func newSingleDriver(l *logrus.Logger) (Contract, error) {
-	level := viper.GetString("LOG_SINGLE_LOG_LEVEL")
+func newSingleDriver(l *logrus.Logger, c SingeConfig) (Contract, error) {
+	level := c.Level
 	if level != "" {
 		l.SetLevel(getLogLevel(level))
 	}
 	return &singleDriver{
 		l: l,
+		c: c,
 	}, nil
 }

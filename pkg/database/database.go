@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"sync"
 )
@@ -19,6 +18,12 @@ type Contract interface {
 	GetDB(ctx context.Context) *gorm.DB
 }
 
+type Config struct {
+	Driver string
+	PgSql  PgConfig
+	MySql  MySqlConfig
+}
+
 const (
 	DriverPostgres = "pgsql"
 	DriverMysql    = "mysql"
@@ -29,21 +34,20 @@ var (
 	dbOnce     sync.Once
 )
 
-func New() (Contract, error) {
+func New(c Config) (Contract, error) {
 	var err error = nil
 
-	d := viper.GetString("DB_DRIVER")
-	if d == "" || (d != DriverMysql && d != DriverPostgres) {
+	if c.Driver == "" || (c.Driver != DriverMysql && c.Driver != DriverPostgres) {
 		return nil, errors.New("default database driver is invalid")
 	}
 
 	dbOnce.Do(func() {
-		switch d {
+		switch c.Driver {
 		case DriverPostgres:
-			dbInstance = newPostgres()
+			dbInstance = newPostgres(c.PgSql)
 			break
 		case DriverMysql:
-			dbInstance = newMySql()
+			dbInstance = newMySql(c.MySql)
 		}
 
 		if errConnect := dbInstance.Connect(); errConnect != nil {

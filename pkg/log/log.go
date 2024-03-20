@@ -3,7 +3,6 @@ package log
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 	"sync"
 )
@@ -23,28 +22,35 @@ type Contract interface {
 	Fatal(args ...interface{})
 }
 
-func New() (Contract, error) {
+type Config struct {
+	Channel        string
+	Daily          DailyConfig
+	Singe          SingeConfig
+	StdOut         StdOutConfig
+	TeleHookConfig TeleHookConfig
+}
+
+func New(c Config) (Contract, error) {
 	var err error
-	c := viper.GetString("LOG_DEFAULT_CHANNEL")
-	if c == "" {
-		c = "daily"
-	}
 	once.Do(func() {
 		l := newLogrus(logrus.InfoLevel)
-		switch c {
+		switch c.Channel {
 		case "daily":
-			instance, err = newDailyDriver(l)
+			instance, err = newDailyDriver(l, c.Daily)
 			break
 		case "single":
-			instance, err = newSingleDriver(l)
+			instance, err = newSingleDriver(l, c.Singe)
 			break
 		case "stdout":
-			instance = newStdoutDriver(l)
+			instance = newStdoutDriver(l, c.StdOut)
 			break
 		default:
 			err = errors.New("log channel is invalid")
 		}
-		setupHook(l)
+
+		if c.TeleHookConfig.Enable {
+			addTelegramHook(l, c.TeleHookConfig)
+		}
 	})
 	return instance, err
 }

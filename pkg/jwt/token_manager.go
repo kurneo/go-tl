@@ -9,7 +9,6 @@ import (
 	"github.com/kurneo/go-template/pkg/cache"
 	"github.com/kurneo/go-template/pkg/support/repository"
 	echoJwt "github.com/labstack/echo-jwt/v4"
-	"github.com/spf13/viper"
 	"math"
 	"time"
 )
@@ -36,8 +35,14 @@ type jwtMapClaims[T repository.PrimaryKey] struct {
 	jwt.MapClaims
 }
 
+type JWTConfig struct {
+	Secret  string
+	Timeout int
+}
+
 type TokenManager[T repository.PrimaryKey] struct {
-	c cache.Contact
+	c   cache.Contact
+	cfg JWTConfig
 }
 
 func (t TokenManager[T]) CreateToken(sub T) (*AccessToken[T], error) {
@@ -98,7 +103,7 @@ func (t TokenManager[T]) CheckToken(ctx context.Context, token string) (*AccessT
 }
 
 func (t TokenManager[T]) GetSecret() (string, error) {
-	secret := viper.GetString("JWT_SECRET")
+	secret := t.cfg.Secret
 
 	if secret == "" {
 		return "", errors.New("jwt secret mismatch")
@@ -108,7 +113,7 @@ func (t TokenManager[T]) GetSecret() (string, error) {
 }
 
 func (t TokenManager[T]) GetTimeout() (int64, error) {
-	timeout := viper.GetInt("JWT_TOKEN_TIMEOUT")
+	timeout := t.cfg.Timeout
 
 	if timeout == 0 {
 		return 0, errors.New("jwt token timeout mismatch")
@@ -160,8 +165,9 @@ func (t TokenManager[T]) ParseToken(token string) (*AccessToken[T], error) {
 	}, nil
 }
 
-func NewTokenManager[T repository.PrimaryKey](c cache.Contact) *TokenManager[T] {
+func NewTokenManager[T repository.PrimaryKey](c cache.Contact, cfg JWTConfig) *TokenManager[T] {
 	return &TokenManager[T]{
-		c: c,
+		c:   c,
+		cfg: cfg,
 	}
 }

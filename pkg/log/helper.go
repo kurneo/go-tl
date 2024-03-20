@@ -3,7 +3,6 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -58,11 +57,4 @@ func getCalledFile(skip int) string {
 		line = 1
 	}
 	return fmt.Sprintf("%s:%d", callerFile, line)
-}
-
-func setupHook(l *logrus.Logger) {
-	//Telegram
-	if viper.GetBool("LOG_HOOK_TELE_ENABLE") {
-		addTelegramHook(l)
-	}
 }

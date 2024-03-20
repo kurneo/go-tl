@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -19,7 +18,17 @@ const (
 	postgresDefaultConnTimeout  = time.Second
 )
 
+type PgConfig struct {
+	Host        string
+	Port        int
+	User        string
+	Password    string
+	DBName      string
+	MaxPoolSize int
+}
+
 type Postgres struct {
+	c            PgConfig
 	connAttempts int
 	connTimeout  time.Duration
 
@@ -45,19 +54,19 @@ func (p *Postgres) Close() error {
 func (p *Postgres) Connect() error {
 	var err error
 
-	maxPoolSize := viper.GetInt("POSTGRES_DB_MAX_POOL_SIZE")
-	if maxPoolSize == 0 {
-		maxPoolSize = postgresDefaultMaxPoolSize
+	//maxPoolSize := viper.GetInt("POSTGRES_DB_MAX_POOL_SIZE")
+	if p.c.MaxPoolSize == 0 {
+		p.c.MaxPoolSize = postgresDefaultMaxPoolSize
 	}
 
 	for p.connAttempts > 0 {
 		dsn := fmt.Sprintf(
-			"host=%s user=%s password=%s dbname=%s port=%s",
-			viper.GetString("POSTGRES_DB_HOST"),
-			viper.GetString("POSTGRES_DB_USER"),
-			viper.GetString("POSTGRES_DB_PASSWORD"),
-			viper.GetString("POSTGRES_DB_NAME"),
-			viper.GetString("POSTGRES_DB_PORT"),
+			"host=%s user=%s password=%s dbname=%s port=%d",
+			p.c.Host,
+			p.c.User,
+			p.c.Password,
+			p.c.DBName,
+			p.c.Port,
 		)
 
 		p.db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -84,7 +93,7 @@ func (p *Postgres) Connect() error {
 		return err
 	}
 
-	db.SetMaxOpenConns(maxPoolSize)
+	db.SetMaxOpenConns(p.c.MaxPoolSize)
 
 	return nil
 }
@@ -140,8 +149,9 @@ func (p *Postgres) GetDB(ctx context.Context) *gorm.DB {
 	return p.db.WithContext(ctx)
 }
 
-func newPostgres() *Postgres {
+func newPostgres(c PgConfig) *Postgres {
 	return &Postgres{
+		c:            c,
 		connAttempts: postgresDefaultConnAttempts,
 		connTimeout:  postgresDefaultConnTimeout,
 	}
@@ -153,7 +163,16 @@ const (
 	mySqlDefaultConnTimeout   = time.Second
 )
 
+type MySqlConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+}
+
 type MySQL struct {
+	c            MySqlConfig
 	connAttempts int
 	connTimeout  time.Duration
 
@@ -178,20 +197,16 @@ func (m *MySQL) Close() error {
 func (m *MySQL) Connect() error {
 	var err error
 
-	maxConnection := viper.GetInt("MYSQL_DB_MAX_CONNECTION")
-	if maxConnection == 0 {
-		maxConnection = mySqlDefaultMaxConnection
-	}
-
 	for m.connAttempts > 0 {
 		dsn := fmt.Sprintf(
-			"%s:%s@tcp(%s:%s)/%s",
-			viper.GetString("MYSQL_DB_USER"),
-			viper.GetString("MYSQL_DB_PASSWORD"),
-			viper.GetString("MYSQL_DB_HOST"),
-			viper.GetString("MYSQL_DB_PORT"),
-			viper.GetString("MYSQL_DB_NAME"),
+			"%s:%s@tcp(%s:%d)/%s",
+			m.c.User,
+			m.c.Password,
+			m.c.Host,
+			m.c.Port,
+			m.c.DBName,
 		)
+
 		m.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
 			Logger:                 logger.Default.LogMode(logger.Info),
@@ -259,8 +274,9 @@ func (m *MySQL) GetDB(ctx context.Context) *gorm.DB {
 	return m.db.WithContext(ctx)
 }
 
-func newMySql() *MySQL {
+func newMySql(c MySqlConfig) *MySQL {
 	return &MySQL{
+		c:            c,
 		connAttempts: mySqlDefaultConnAttempts,
 		connTimeout:  mySqlDefaultConnTimeout,
 	}

@@ -3,7 +3,6 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"net/url"
@@ -91,21 +90,29 @@ func (h *telegramHook) Levels() []logrus.Level {
 	return out
 }
 
-func addTelegramHook(l *logrus.Logger) {
-	c := &telegramClient{
-		botToken: viper.GetString("LOG_HOOK_TELE_BOT_TOKEN"),
-		chatID:   viper.GetString("LOG_HOOK_TELE_CHAT_ID"),
+type TeleHookConfig struct {
+	Enable   bool
+	BotToken string
+	ChatID   string
+	Level    string
+	Mentions string
+}
+
+func addTelegramHook(l *logrus.Logger, c TeleHookConfig) {
+	tc := &telegramClient{
+		botToken: c.BotToken,
+		chatID:   c.ChatID,
 		endpoint: telegramEndpoint,
 		queue:    make(chan string, 128),
 		cancel:   make(chan struct{}),
 	}
 
-	go c.background()
+	go tc.background()
 
 	h := &telegramHook{
-		client:    c,
-		level:     getLogLevel(viper.GetString("LOG_HOOK_TELE_LEVEL")),
-		mention:   strings.Split(viper.GetString("LOG_HOOK_TELE_MENTIONS"), ","),
+		client:    tc,
+		level:     getLogLevel(c.Level),
+		mention:   strings.Split(c.Mentions, ","),
 		formatter: formatter,
 	}
 
