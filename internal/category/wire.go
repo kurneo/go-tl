@@ -15,7 +15,7 @@ var WireSet = wire.NewSet(
 	ResolveCatDatasource,
 	ResolveCatRepo,
 	ResolveCatUseCase,
-	ResolveCatV1Controller,
+	ResolveCatHttpV1Controller,
 )
 
 func ResolveCatDatasource(db database.Contract) *datasource.CatDatasource {
@@ -29,10 +29,10 @@ func ResolveCatUseCase(r domainRepository.CategoryRepositoryContract) usecase.Ca
 	return usecase.NewCatUseCase(r)
 }
 
-func ResolveCatV1Controller(
+func ResolveCatHttpV1Controller(
 	l log.Contract,
 	db database.Contract,
 	u usecase.CategoryUseCaseContract,
 ) *v1.Controller {
-	return v1.NewV1Controller(l, db, u)
+	return v1.NewHttpV1Controller(l, db, u)
 }

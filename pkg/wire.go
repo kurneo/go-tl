@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// WireSet is set of DI export from pkg
 var WireSet = wire.NewSet(
 	ResolveCacheInstance,
 	ResolveDatabaseInstance,
@@ -21,6 +22,7 @@ var WireSet = wire.NewSet(
 	ResolveJWTMiddlewareFunc,
 )
 
+// ResolveCacheInstance resolve dependencies and create cache instance
 func ResolveCacheInstance() cache.Contact {
 	cfg := cache.Config{
 		Driver: viper.GetString("CACHE_DRIVER"),
@@ -48,6 +50,7 @@ func ResolveCacheInstance() cache.Contact {
 	return c
 }
 
+// ResolveDatabaseInstance resolve dependencies and create database instance
 func ResolveDatabaseInstance() database.Contract {
 	c := database.Config{
 		Driver: viper.GetString("DB_DRIVER"),
@@ -87,6 +90,7 @@ func ResolveDatabaseInstance() database.Contract {
 	return d
 }
 
+// ResolveLogInstance resolve dependencies and create log instance
 func ResolveLogInstance() logPkg.Contract {
 	c := logPkg.Config{
 		Channel: viper.GetString("LOG_DEFAULT_CHANNEL"),
@@ -128,6 +132,7 @@ func ResolveLogInstance() logPkg.Contract {
 	return l
 }
 
+// ResolveTokenManager resolve dependencies and create jwt token manager instance
 func ResolveTokenManager(c cache.Contact) *jwt.TokenManager[int64] {
 	cfg := jwt.JWTConfig{
 		Secret:  viper.GetString("JWT_SECRET"),
@@ -136,6 +141,7 @@ func ResolveTokenManager(c cache.Contact) *jwt.TokenManager[int64] {
 	return jwt.NewTokenManager[int64](c, cfg)
 }
 
+// ResolveJWTMiddlewareFunc resolve dependencies and create echo jwt middleware
 func ResolveJWTMiddlewareFunc(t *jwt.TokenManager[int64]) echo.MiddlewareFunc {
 	return middlewares.JwtMiddleware(t)
 }

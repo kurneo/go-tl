@@ -228,7 +228,7 @@ func (c Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.Middlewa
 	g.DELETE("/:id", c.Delete)
 }
 
-func NewV1Controller(
+func NewHttpV1Controller(
 	l log.Contract,
 	db database.Contract,
 	u usecase.CategoryUseCaseContract,

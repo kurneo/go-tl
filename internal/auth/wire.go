@@ -13,13 +13,14 @@ import (
 	"github.com/kurneo/go-template/pkg/log"
 )
 
+// WireSet set of DI export from auth
 var WireSet = wire.NewSet(
 	ResolveUserDatasource,
 	ResolveUserRepo,
 	ResolveTokenManager,
 	ResolveUserUseCase,
 	ResolvePasswordChecker,
-	ResolveV1Controller,
+	ResolveAuthHttpV1Controller,
 )
 
 func ResolveUserDatasource(db database.Contract) *datasource.UserDatasource {
@@ -46,10 +47,10 @@ func ResolveUserUseCase(
 	return usecase.NewUserUseCase(r, t, p)
 }
 
-func ResolveV1Controller(
+func ResolveAuthHttpV1Controller(
 	u usecase.UserUseCaseContract,
 	l log.Contract,
 	db database.Contract,
 ) *v1.Controller {
-	return v1.NewV1Controller(u, l, db)
+	return v1.NewHtpV1Controller(u, l, db)
 }

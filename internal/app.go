@@ -38,6 +38,7 @@ type application struct {
 	c    cache.Contact
 }
 
+// Start server with gracefully shutdown.
 func (app *application) Start() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -61,18 +62,22 @@ func (app *application) Start() {
 	}
 }
 
+// GetLogger used by application
 func (app *application) GetLogger() logPkg.Contract {
 	return app.lg
 }
 
+// GetDB used by application
 func (app *application) GetDB() database.Contract {
 	return app.db
 }
 
+// GetCache used by application
 func (app *application) GetCache() cache.Contact {
 	return app.c
 }
 
+// GetHttpHandler that create server
 func (app *application) GetHttpHandler() *echo.Echo {
 	return app.echo
 }
@@ -81,6 +86,7 @@ func (app *application) getHttpPort() string {
 	return viper.GetString("APP_HTTP_PORT")
 }
 
+// NewApplication make new application with can start/stop
 func NewApplication(
 	lg logPkg.Contract,
 	db database.Contract,

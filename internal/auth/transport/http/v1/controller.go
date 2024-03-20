@@ -82,7 +82,7 @@ func (ctl Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.Middle
 	g.POST("/logout", ctl.Logout, jwtMiddleware)
 }
 
-func NewV1Controller(
+func NewHtpV1Controller(
 	u usecase.UserUseCaseContract,
 	l log.Contract,
 	db database.Contract,
