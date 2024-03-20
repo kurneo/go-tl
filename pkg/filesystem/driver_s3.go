@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/kurneo/go-template/pkg/filesystem/helper"
-	"github.com/kurneo/go-template/pkg/logger"
+	"github.com/kurneo/go-template/pkg/log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,7 +16,7 @@ import (
 
 type S3Driver struct {
 	s  *s3.S3
-	l  logger.Contract
+	l  log.Contract
 	b  string
 	r  string
 	p  helper.S3PathHelper
@@ -286,7 +286,7 @@ func (s S3Driver) PutObject(path string, f *bytes.Reader) error {
 	return nil
 }
 
-func NewS3Driver(r, b string, l logger.Contract, p helper.S3PathHelper, pf helper.PathPreFixer) *S3Driver {
+func NewS3Driver(r, b string, l log.Contract, p helper.S3PathHelper, pf helper.PathPreFixer) *S3Driver {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(r),
 	}))

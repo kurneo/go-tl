@@ -2,8 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"github.com/kurneo/go-template/config"
-	"github.com/kurneo/go-template/pkg/database"
 	"strings"
 )
 
@@ -113,11 +111,7 @@ func LessOrEqual[T comparable](field string, value T) Condition {
 }
 
 func Contains(field string, value string) Condition {
-	cfg, _ := config.NewConfig()
 	op := "like"
-	if cfg.DB.Default == database.DriverPostgres {
-		op = "ilike"
-	}
 	return binaryOperator[string]{
 		field:    field,
 		operator: op,

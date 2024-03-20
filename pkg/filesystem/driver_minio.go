@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/h2non/filetype"
-	"github.com/kurneo/go-template/pkg/logger"
 	"github.com/minio/minio-go/v6"
 	"os"
 	"path/filepath"
 )
 
 type MinioDriver struct {
-	log    logger.Contract
 	client *minio.Client
 	bucket string
 }
@@ -48,7 +46,7 @@ func (d MinioDriver) Get(path string) (string, error) {
 	defer func() {
 		err := reader.Close()
 		if err != nil {
-			d.log.Error(err)
+			fmt.Println(err)
 		}
 	}()
 
@@ -92,7 +90,6 @@ func NewMinioDriver() (*MinioDriver, error) {
 
 	return &MinioDriver{
 		client: minioClient,
-		log:    nil,
 		bucket: "template",
 	}, nil
 }

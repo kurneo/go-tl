@@ -29,6 +29,18 @@ type DriverContract interface {
 	IsFile(path string) (bool, error)
 }
 
+type DiskLocalContract DriverContract
+
+type DiskPublicContract interface {
+	DriverContract
+	Url(path string) string
+}
+
+type DiskS3Contract interface {
+	DriverContract
+	Url(path string) string
+}
+
 type File struct {
 	Path      string
 	Name      string
@@ -42,22 +54,4 @@ type Directory struct {
 	Path    string
 	Name    string
 	ModTime *time.Time
-}
-
-type DiskContract interface {
-	DriverContract
-}
-
-type LocalDiskContract interface {
-	DiskContract
-}
-
-type PublicDiskContract interface {
-	DiskContract
-	Url(path string) string
-}
-
-type S3DiskContract interface {
-	DiskContract
-	Url(path string) string
 }

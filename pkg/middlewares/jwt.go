@@ -3,13 +3,13 @@ package middlewares
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
+	jwtPkg "github.com/kurneo/go-template/pkg/jwt"
 	httpPkg "github.com/kurneo/go-template/pkg/support/http"
-	jwtPkg "github.com/kurneo/go-template/pkg/support/jwt"
 	echoJwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
-func JwtMiddleware(t jwtPkg.TokenManager[int64]) echo.MiddlewareFunc {
+func JwtMiddleware(t *jwtPkg.TokenManager[int64]) echo.MiddlewareFunc {
 	secret, _ := t.GetSecret()
 	return echoJwt.WithConfig(echoJwt.Config{
 		SigningKey: secret,

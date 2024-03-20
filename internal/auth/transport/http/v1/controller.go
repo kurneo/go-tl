@@ -1,22 +1,22 @@
 package v1
 
 import (
-	"github.com/kurneo/go-template/cmd/app"
-	"github.com/kurneo/go-template/internal/auth/usecase"
-	"github.com/kurneo/go-template/pkg/logger"
+	"github.com/kurneo/go-template/internal/auth/domain/usecase"
+	"github.com/kurneo/go-template/pkg/database"
+	jwtPkg "github.com/kurneo/go-template/pkg/jwt"
+	"github.com/kurneo/go-template/pkg/log"
 	"github.com/kurneo/go-template/pkg/support/http"
-	jwtPkg "github.com/kurneo/go-template/pkg/support/jwt"
 	"github.com/kurneo/go-template/pkg/support/validator"
 	"github.com/labstack/echo/v4"
 )
 
-type controller[T jwtPkg.SubType] struct {
-	a app.Contract
-	l logger.Contract
-	u usecase.UserUseCaseContract[T]
+type Controller struct {
+	l  log.Contract
+	db database.Contract
+	u  usecase.UserUseCaseContract
 }
 
-func (ctl controller[T]) Login(context echo.Context) error {
+func (ctl Controller) Login(context echo.Context) error {
 	body, err := http.ParseFormData[LoginFormData](context)
 	if err != nil {
 		ctl.l.Error(err)
@@ -27,7 +27,7 @@ func (ctl controller[T]) Login(context echo.Context) error {
 		return http.ResponseUnprocessableEntity(context, errValid)
 	}
 
-	errTrans := ctl.a.GetDB().Begin()
+	errTrans := ctl.db.Begin()
 	if errTrans != nil {
 		ctl.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -36,7 +36,7 @@ func (ctl controller[T]) Login(context echo.Context) error {
 	token, errLogin := ctl.u.Login(context.Request().Context(), body.Email, body.Password)
 
 	if errLogin != nil {
-		errTrans = ctl.a.GetDB().Rollback()
+		errTrans = ctl.db.Rollback()
 		if errTrans != nil {
 			ctl.l.Error(errTrans)
 			return http.ResponseError(context, errTrans.Error())
@@ -48,7 +48,7 @@ func (ctl controller[T]) Login(context echo.Context) error {
 		}
 	}
 
-	errTrans = ctl.a.GetDB().Commit()
+	errTrans = ctl.db.Commit()
 	if errTrans != nil {
 		ctl.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -57,8 +57,8 @@ func (ctl controller[T]) Login(context echo.Context) error {
 	return context.JSON(200, token)
 }
 
-func (ctl controller[T]) Me(context echo.Context) error {
-	auth := context.Get("auth").(*jwtPkg.AccessToken[T])
+func (ctl Controller) Me(context echo.Context) error {
+	auth := context.Get("auth").(*jwtPkg.AccessToken[int64])
 	user, err := ctl.u.GetProfile(context.Request().Context(), auth.Sub)
 	if err != nil {
 		return http.ResponseError(context, err.GetMessage())
@@ -66,8 +66,8 @@ func (ctl controller[T]) Me(context echo.Context) error {
 	return http.ResponseOk(context, user)
 }
 
-func (ctl controller[T]) Logout(context echo.Context) error {
-	auth := context.Get("auth").(*jwtPkg.AccessToken[T])
+func (ctl Controller) Logout(context echo.Context) error {
+	auth := context.Get("auth").(*jwtPkg.AccessToken[int64])
 	err := ctl.u.Logout(context.Request().Context(), auth)
 	if err != nil {
 		return http.ResponseError(context, err.GetMessage())
@@ -75,12 +75,17 @@ func (ctl controller[T]) Logout(context echo.Context) error {
 	return http.ResponseOk(context, true)
 }
 
-func New[T jwtPkg.SubType](a app.Contract, u usecase.UserUseCaseContract[T]) {
-	c := &controller[T]{l: a.GetLogger(), u: u, a: a}
-	a.RegisterAdminV1Route(func(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
-		g := group.Group("/auth")
-		g.POST("/login", c.Login)
-		g.GET("/me", c.Me, jwtMiddleware)
-		g.POST("/logout", c.Logout, jwtMiddleware)
-	})
+func (ctl Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
+	g := group.Group("/auth")
+	g.POST("/login", ctl.Login)
+	g.GET("/me", ctl.Me, jwtMiddleware)
+	g.POST("/logout", ctl.Logout, jwtMiddleware)
+}
+
+func NewV1Controller(
+	u usecase.UserUseCaseContract,
+	l log.Contract,
+	db database.Contract,
+) *Controller {
+	return &Controller{l: l, u: u, db: db}
 }

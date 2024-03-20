@@ -2,6 +2,7 @@ vendor
 .idea
 
 storage/logs/*
+!storage/logs/.gitkeep
 storage/app/*
 
 docker/.env
@@ -11,3 +12,5 @@ config.yml
 migrations/.env
 
 /tmp
+
+.env

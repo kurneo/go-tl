@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func setupLocalDriver() *LocalDriver {
+func setupLocalDriver() *driverLocal {
 	separator := "/"
 	prefix := "./storage/testing/unit"
 
@@ -32,7 +32,7 @@ func setupLocalDriver() *LocalDriver {
 		log.Fatal(err)
 	}
 
-	return &LocalDriver{preFixer: helper.NewPreFixer(prefix, separator)}
+	return &driverLocal{preFixer: helper.NewPreFixer(prefix, separator)}
 }
 
 func teardownLocalDriver() {

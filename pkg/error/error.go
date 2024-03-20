@@ -1,8 +1,27 @@
 package error
 
+const (
+	DatasourceError = iota
+	DomainError
+	TransportError
+)
+
+type Contract interface {
+	GetType() int
+	GetError() error
+	GetMessage() string
+	IsTransportLevelErr() bool
+	IsDomainError() bool
+	IsDatasourceErr() bool
+}
+
 type err struct {
 	err     error
 	errType int
+}
+
+func (e err) Error() string {
+	return e.err.Error()
 }
 
 func (e err) GetType() int {

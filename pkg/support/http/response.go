@@ -1,7 +1,6 @@
 package http
 
 import (
-	"github.com/kurneo/go-template/config"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"os"
@@ -25,10 +24,9 @@ func ResponseOk(context echo.Context, data interface{}) error {
 
 func ResponseError(context echo.Context, vars ...interface{}) error {
 	message := "internal server error"
-	cfg, _ := config.NewConfig()
-	if cfg.Debug && len(vars) > 0 && vars[0] != nil && reflect.ValueOf(vars[0]).Kind() == reflect.String {
-		message = vars[0].(string)
-	}
+	//if cfg.Debug && len(vars) > 0 && vars[0] != nil && reflect.ValueOf(vars[0]).Kind() == reflect.String {
+	//	message = vars[0].(string)
+	//}
 	return context.JSON(
 		http.StatusInternalServerError,
 		map[string]interface{}{"message": message},

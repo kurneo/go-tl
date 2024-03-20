@@ -3,9 +3,7 @@ package database
 import (
 	"context"
 	"errors"
-	"github.com/kurneo/go-template/config"
-	"github.com/kurneo/go-template/pkg/database/mysql"
-	"github.com/kurneo/go-template/pkg/database/postgres"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"sync"
 )
@@ -21,42 +19,31 @@ type Contract interface {
 	GetDB(ctx context.Context) *gorm.DB
 }
 
-var (
-	DriverPostgres = "postgres"
+const (
+	DriverPostgres = "pgsql"
 	DriverMysql    = "mysql"
-	dbInstance     Contract
-	dbOnce         sync.Once
 )
 
-func New(cfg config.DB, options ...interface{}) (Contract, error) {
-	var err error = nil
-	c, ok := cfg.Connections[cfg.Default]
+var (
+	dbInstance Contract
+	dbOnce     sync.Once
+)
 
-	if !ok {
-		return nil, errors.New("cannot find config for: " + cfg.Default)
+func New() (Contract, error) {
+	var err error = nil
+
+	d := viper.GetString("DB_DRIVER")
+	if d == "" || (d != DriverMysql && d != DriverPostgres) {
+		return nil, errors.New("default database driver is invalid")
 	}
 
 	dbOnce.Do(func() {
-		switch cfg.Default {
+		switch d {
 		case DriverPostgres:
-			opts := make([]postgres.Option, 0)
-			for _, o := range options {
-				opts = append(opts, o.(postgres.Option))
-			}
-			dbInstance = postgres.New(c, opts...)
+			dbInstance = newPostgres()
 			break
 		case DriverMysql:
-			opts := make([]mysql.Option, 0)
-			for _, o := range options {
-				opts = append(opts, o.(mysql.Option))
-			}
-			dbInstance = mysql.New(c, opts...)
-		default:
-			dbInstance = nil
-		}
-
-		if dbInstance == nil {
-			err = errors.New("invalid database connection: " + cfg.Default)
+			dbInstance = newMySql()
 		}
 
 		if errConnect := dbInstance.Connect(); errConnect != nil {

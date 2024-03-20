@@ -1,10 +1,10 @@
 package v1
 
 import (
-	"github.com/kurneo/go-template/cmd/app"
-	"github.com/kurneo/go-template/internal/category/entities"
-	"github.com/kurneo/go-template/internal/category/usecase"
-	"github.com/kurneo/go-template/pkg/logger"
+	"github.com/kurneo/go-template/internal/category/domain/entity"
+	"github.com/kurneo/go-template/internal/category/domain/usecase"
+	"github.com/kurneo/go-template/pkg/database"
+	"github.com/kurneo/go-template/pkg/log"
 	"github.com/kurneo/go-template/pkg/support/http"
 	"github.com/kurneo/go-template/pkg/support/slices"
 	"github.com/kurneo/go-template/pkg/support/validator"
@@ -12,13 +12,13 @@ import (
 	"strconv"
 )
 
-type controller struct {
-	a app.Contract
-	l logger.Contract
-	u usecase.CategoryUseCaseContract
+type Controller struct {
+	l  log.Contract
+	db database.Contract
+	u  usecase.CategoryUseCaseContract
 }
 
-func (c controller) List(context echo.Context) error {
+func (c Controller) List(context echo.Context) error {
 	filters := http.GetFilterParams(context, []string{"name", "created_at", "status"})
 	page, limit, errPaginate := http.GetPaginateParams(context)
 	sorts := http.GetSortParams(context)
@@ -45,13 +45,13 @@ func (c controller) List(context echo.Context) error {
 
 	return context.JSON(
 		200,
-		slices.Map[entities.Category, map[string]interface{}](list, func(category entities.Category) map[string]interface{} {
+		slices.Map[entity.Category, map[string]interface{}](list, func(category entity.Category) map[string]interface{} {
 			return category.ToMap()
 		}),
 	)
 }
 
-func (c controller) Get(context echo.Context) error {
+func (c Controller) Get(context echo.Context) error {
 	id, errGetId := http.GetIDRouteParam(context)
 
 	if errGetId != nil {
@@ -70,7 +70,7 @@ func (c controller) Get(context echo.Context) error {
 	return http.ResponseOk(context, category.ToMap())
 }
 
-func (c controller) Store(context echo.Context) error {
+func (c Controller) Store(context echo.Context) error {
 	body, err := http.ParseFormData[CategoryFormData](context)
 	if err != nil {
 		c.l.Error(err)
@@ -81,7 +81,7 @@ func (c controller) Store(context echo.Context) error {
 		return http.ResponseUnprocessableEntity(context, errVald)
 	}
 
-	errTrans := c.a.GetDB().Begin()
+	errTrans := c.db.Begin()
 
 	if errTrans != nil {
 		c.l.Error(errTrans)
@@ -90,7 +90,7 @@ func (c controller) Store(context echo.Context) error {
 	cat, errCrt := c.u.Store(context.Request().Context(), body)
 
 	if errCrt != nil {
-		errTrans = c.a.GetDB().Rollback()
+		errTrans = c.db.Rollback()
 		if errTrans != nil {
 			c.l.Error(errTrans)
 			return http.ResponseError(context, errTrans.Error())
@@ -102,7 +102,7 @@ func (c controller) Store(context echo.Context) error {
 		}
 	}
 
-	errTrans = c.a.GetDB().Commit()
+	errTrans = c.db.Commit()
 	if errTrans != nil {
 		c.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -111,7 +111,7 @@ func (c controller) Store(context echo.Context) error {
 	return http.ResponseOk(context, (*cat).ToMap())
 }
 
-func (c controller) Update(context echo.Context) error {
+func (c Controller) Update(context echo.Context) error {
 	id, errGetId := http.GetIDRouteParam(context)
 
 	if errGetId != nil {
@@ -141,7 +141,7 @@ func (c controller) Update(context echo.Context) error {
 		return http.ResponseNotFound(context)
 	}
 
-	errTrans := c.a.GetDB().Begin()
+	errTrans := c.db.Begin()
 	if errTrans != nil {
 		c.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -149,7 +149,7 @@ func (c controller) Update(context echo.Context) error {
 	errUpdate := c.u.Update(context.Request().Context(), category, body)
 
 	if errUpdate != nil {
-		errTrans = c.a.GetDB().Rollback()
+		errTrans = c.db.Rollback()
 		if errTrans != nil {
 			c.l.Error(errTrans)
 			return http.ResponseError(context, errTrans.Error())
@@ -160,7 +160,7 @@ func (c controller) Update(context echo.Context) error {
 			return http.ResponseError(context, errUpdate.GetMessage())
 		}
 	}
-	errTrans = c.a.GetDB().Commit()
+	errTrans = c.db.Commit()
 	if errTrans != nil {
 		c.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -170,7 +170,7 @@ func (c controller) Update(context echo.Context) error {
 
 }
 
-func (c controller) Delete(context echo.Context) error {
+func (c Controller) Delete(context echo.Context) error {
 	id, errGetId := http.GetIDRouteParam(context)
 
 	if errGetId != nil {
@@ -190,7 +190,7 @@ func (c controller) Delete(context echo.Context) error {
 		return http.ResponseNotFound(context)
 	}
 
-	errTrans := c.a.GetDB().Begin()
+	errTrans := c.db.Begin()
 	if errTrans != nil {
 		c.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -199,7 +199,7 @@ func (c controller) Delete(context echo.Context) error {
 	errDel := c.u.Delete(context.Request().Context(), category)
 
 	if errDel != nil {
-		errTrans = c.a.GetDB().Rollback()
+		errTrans = c.db.Rollback()
 		if errTrans != nil {
 			c.l.Error(errTrans)
 			return http.ResponseError(context, errTrans.Error())
@@ -210,7 +210,7 @@ func (c controller) Delete(context echo.Context) error {
 			return http.ResponseError(context, errDel.GetMessage())
 		}
 	}
-	errTrans = c.a.GetDB().Commit()
+	errTrans = c.db.Commit()
 	if errTrans != nil {
 		c.l.Error(errTrans)
 		return http.ResponseError(context, errTrans.Error())
@@ -219,14 +219,19 @@ func (c controller) Delete(context echo.Context) error {
 	return http.ResponseOk(context, true)
 }
 
-func New(a app.Contract, u usecase.CategoryUseCaseContract) {
-	c := &controller{l: a.GetLogger(), u: u, a: a}
-	a.RegisterAdminV1Route(func(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
-		g := group.Group("/categories", jwtMiddleware)
-		g.GET("", c.List)
-		g.POST("", c.Store)
-		g.GET("/:id", c.Get)
-		g.PUT("/:id", c.Update)
-		g.DELETE("/:id", c.Delete)
-	})
+func (c Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
+	g := group.Group("/categories", jwtMiddleware)
+	g.GET("", c.List)
+	g.POST("", c.Store)
+	g.GET("/:id", c.Get)
+	g.PUT("/:id", c.Update)
+	g.DELETE("/:id", c.Delete)
+}
+
+func NewV1Controller(
+	l log.Contract,
+	db database.Contract,
+	u usecase.CategoryUseCaseContract,
+) *Controller {
+	return &Controller{l: l, u: u, db: db}
 }
