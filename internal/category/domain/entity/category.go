@@ -3,8 +3,8 @@ package entity
 import "time"
 
 const (
-	StatusPublish = 10
-	StatusDraft   = 11
+	StatusDraft = iota + 1
+	StatusPublish
 )
 
 type Category struct {

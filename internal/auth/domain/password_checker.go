@@ -1,16 +1,17 @@
 package domain
 
-import (
-	"github.com/kurneo/go-template/pkg/support/crypto"
-)
+import "github.com/kurneo/go-template/pkg/hashing"
 
 type PasswordChecker struct {
+	s hashing.Contact
 }
 
 func (c PasswordChecker) Check(hashed, plain string) bool {
-	return crypto.Check(hashed, plain) == nil
+	return c.s.Check(hashed, plain)
 }
 
-func NewPasswordChecker() *PasswordChecker {
-	return &PasswordChecker{}
+func NewPasswordChecker(s hashing.Contact) *PasswordChecker {
+	return &PasswordChecker{
+		s: s,
+	}
 }

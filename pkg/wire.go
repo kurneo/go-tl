@@ -4,6 +4,7 @@ import (
 	"github.com/google/wire"
 	"github.com/kurneo/go-template/pkg/cache"
 	"github.com/kurneo/go-template/pkg/database"
+	"github.com/kurneo/go-template/pkg/hashing"
 	"github.com/kurneo/go-template/pkg/jwt"
 	logPkg "github.com/kurneo/go-template/pkg/log"
 	"github.com/kurneo/go-template/pkg/middlewares"
@@ -20,6 +21,7 @@ var WireSet = wire.NewSet(
 	ResolveLogInstance,
 	ResolveTokenManager,
 	ResolveJWTMiddlewareFunc,
+	ResolveHashingInstance,
 )
 
 // ResolveCacheInstance resolve dependencies and create cache instance
@@ -144,4 +146,30 @@ func ResolveTokenManager(c cache.Contact) *jwt.TokenManager[int64] {
 // ResolveJWTMiddlewareFunc resolve dependencies and create echo jwt middleware
 func ResolveJWTMiddlewareFunc(t *jwt.TokenManager[int64]) echo.MiddlewareFunc {
 	return middlewares.JwtMiddleware(t)
+}
+
+func ResolveHashingInstance() hashing.Contact {
+	c := hashing.Config{
+		Driver: viper.GetString("HASHING_DRIVER"),
+		Bcrypt: struct{ Cost int }{Cost: viper.GetInt("HASHING_BCRYPT_COST")},
+		Argon2: struct {
+			Memory      uint32
+			Iterations  uint32
+			Parallelism uint8
+			SaltLength  uint32
+			KeyLength   uint32
+		}{
+			Memory:      viper.GetUint32("HASHING_ARGON2_MEMORY"),
+			Iterations:  viper.GetUint32("HASHING_ARGON2_ITERATIONS"),
+			Parallelism: uint8(viper.GetInt("HASHING_ARGON2_PARALLELISM")),
+			SaltLength:  viper.GetUint32("HASHING_ARGON2_SALT_LENGTH"),
+			KeyLength:   viper.GetUint32("HASHING_ARGON2_KEY_LENGTH"),
+		},
+	}
+
+	s, err := hashing.New(c)
+	if err != nil {
+		log.Fatalf("init hashing error: %s", err)
+	}
+	return s
 }

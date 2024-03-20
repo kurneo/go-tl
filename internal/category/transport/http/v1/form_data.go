@@ -3,7 +3,7 @@ package v1
 type CategoryFormData struct {
 	Name        string  `validate:"required" form:"name" json:"name"`
 	Description *string `validate:"omitempty" form:"description" json:"description"`
-	Status      int     `validate:"required,oneof=10 11" form:"status" json:"status"`
+	Status      int     `validate:"required,oneof=1 2" form:"status" json:"status"`
 	IsDefault   *bool   `validate:"required" form:"is_default" json:"is_default"`
 }
 

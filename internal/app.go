@@ -6,6 +6,7 @@ import (
 	catv1 "github.com/kurneo/go-template/internal/category/transport/http/v1"
 	"github.com/kurneo/go-template/pkg/cache"
 	"github.com/kurneo/go-template/pkg/database"
+	"github.com/kurneo/go-template/pkg/hashing"
 	logPkg "github.com/kurneo/go-template/pkg/log"
 	"github.com/kurneo/go-template/pkg/middlewares"
 	"github.com/labstack/echo/v4"
@@ -28,6 +29,7 @@ type App interface {
 	GetLogger() logPkg.Contract
 	GetCache() cache.Contact
 	GetDB() database.Contract
+	GetHashing() hashing.Contact
 	GetHttpHandler() *echo.Echo
 }
 
@@ -36,6 +38,7 @@ type application struct {
 	lg   logPkg.Contract
 	db   database.Contract
 	c    cache.Contact
+	s    hashing.Contact
 }
 
 // Start server with gracefully shutdown.
@@ -77,6 +80,11 @@ func (app *application) GetCache() cache.Contact {
 	return app.c
 }
 
+// GetHashing used by application
+func (app *application) GetHashing() hashing.Contact {
+	return app.s
+}
+
 // GetHttpHandler that create server
 func (app *application) GetHttpHandler() *echo.Echo {
 	return app.echo
@@ -91,6 +99,7 @@ func NewApplication(
 	lg logPkg.Contract,
 	db database.Contract,
 	c cache.Contact,
+	s hashing.Contact,
 	jwtMiddleware echo.MiddlewareFunc,
 	authV1 *authv1.Controller,
 	catV1 *catv1.Controller,
@@ -113,6 +122,7 @@ func NewApplication(
 			lg:   lg,
 			db:   db,
 			c:    c,
+			s:    s,
 		}
 
 		authV1.RegisterRoute(g, jwtMiddleware)

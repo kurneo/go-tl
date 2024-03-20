@@ -9,6 +9,7 @@ import (
 	"github.com/kurneo/go-template/internal/auth/domain/usecase"
 	v1 "github.com/kurneo/go-template/internal/auth/transport/http/v1"
 	"github.com/kurneo/go-template/pkg/database"
+	"github.com/kurneo/go-template/pkg/hashing"
 	"github.com/kurneo/go-template/pkg/jwt"
 	"github.com/kurneo/go-template/pkg/log"
 )
@@ -35,8 +36,8 @@ func ResolveTokenManager(tm *jwt.TokenManager[int64]) *domain.TokenManager {
 	return domain.NewTokenManager(tm)
 }
 
-func ResolvePasswordChecker() *domain.PasswordChecker {
-	return domain.NewPasswordChecker()
+func ResolvePasswordChecker(s hashing.Contact) *domain.PasswordChecker {
+	return domain.NewPasswordChecker(s)
 }
 
 func ResolveUserUseCase(
