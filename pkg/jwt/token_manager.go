@@ -7,13 +7,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/kurneo/go-template/pkg/cache"
-	"github.com/kurneo/go-template/pkg/support/repository"
+	"github.com/kurneo/go-template/pkg/support/db_repository"
 	echoJwt "github.com/labstack/echo-jwt/v4"
 	"math"
 	"time"
 )
 
-type AccessToken[T repository.PrimaryKey] struct {
+type AccessToken[T db_repository.PrimaryKey] struct {
 	Sub         T       `json:"-"`
 	UUID        string  `json:"-"`
 	AccessToken string  `json:"access_token"`
@@ -26,7 +26,7 @@ func (t AccessToken[T]) IsExpired() bool {
 	return t.ExpiredAt < time.Now().Unix()
 }
 
-type jwtMapClaims[T repository.PrimaryKey] struct {
+type jwtMapClaims[T db_repository.PrimaryKey] struct {
 	Sub  T       `json:"sub"`
 	UUID string  `json:"uuid"`
 	Iat  int64   `json:"iat"`
@@ -35,14 +35,14 @@ type jwtMapClaims[T repository.PrimaryKey] struct {
 	jwt.MapClaims
 }
 
-type JWTConfig struct {
+type Config struct {
 	Secret  string
 	Timeout int
 }
 
-type TokenManager[T repository.PrimaryKey] struct {
+type TokenManager[T db_repository.PrimaryKey] struct {
 	c   cache.Contact
-	cfg JWTConfig
+	cfg Config
 }
 
 func (t TokenManager[T]) CreateToken(sub T) (*AccessToken[T], error) {
@@ -165,7 +165,7 @@ func (t TokenManager[T]) ParseToken(token string) (*AccessToken[T], error) {
 	}, nil
 }
 
-func NewTokenManager[T repository.PrimaryKey](c cache.Contact, cfg JWTConfig) *TokenManager[T] {
+func NewTokenManager[T db_repository.PrimaryKey](c cache.Contact, cfg Config) *TokenManager[T] {
 	return &TokenManager[T]{
 		c:   c,
 		cfg: cfg,

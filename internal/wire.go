@@ -10,6 +10,7 @@ import (
 	"github.com/kurneo/go-template/pkg"
 )
 
+// InitializeApp resolve and create global application that will start to serve request
 func InitializeApp() App {
 	wire.Build(
 		pkg.WireSet,

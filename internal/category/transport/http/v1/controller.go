@@ -24,28 +24,28 @@ func (c Controller) List(context echo.Context) error {
 	sorts := http.GetSortParams(context)
 
 	errValidate := http.MergeErrorValidate(errPaginate, validator.ValidateStruct(struct {
-		Status string `validate:"omitempty,oneof=10 11"`
+		Status string `validate:"omitempty,oneof=1 2"`
 	}{Status: filters["status"]}))
 
 	if len(errValidate) > 0 {
 		return http.ResponseUnprocessableEntity(context, errValidate)
 	}
 
-	list, pg, err := c.u.List(context.Request().Context(), filters, sorts, page, limit)
+	list, err := c.u.List(context.Request().Context(), filters, sorts, page, limit)
 
 	if err != nil {
 		return http.ResponseError(context, err.GetMessage())
 	}
 
-	http.SetHeaderCountAndTotal(context, strconv.Itoa(int(pg.Total)), strconv.Itoa(pg.TotalPages))
+	http.SetHeaderCountAndTotal(context, strconv.Itoa(int(list.Paginate.Total)), strconv.Itoa(list.Paginate.TotalPages))
 
-	if len(list) == 0 {
+	if len(list.List) == 0 {
 		return http.ResponseEmptyList(context)
 	}
 
 	return context.JSON(
 		200,
-		slices.Map[entity.Category, map[string]interface{}](list, func(category entity.Category) map[string]interface{} {
+		slices.Map[entity.Category, map[string]interface{}](list.List, func(category entity.Category) map[string]interface{} {
 			return category.ToMap()
 		}),
 	)

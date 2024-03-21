@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// WireSet is set of DI export from pkg
+// WireSet DI export from pkg
 var WireSet = wire.NewSet(
 	ResolveCacheInstance,
 	ResolveDatabaseInstance,
@@ -52,7 +52,7 @@ func ResolveCacheInstance() cache.Contact {
 	return c
 }
 
-// ResolveDatabaseInstance resolve dependencies and create database instance
+// ResolveDatabaseInstance resolve global database instance
 func ResolveDatabaseInstance() database.Contract {
 	c := database.Config{
 		Driver: viper.GetString("DB_DRIVER"),
@@ -65,10 +65,10 @@ func ResolveDatabaseInstance() database.Contract {
 			MaxPoolSize int
 		}{
 			Host:     viper.GetString("POSTGRES_DB_HOST"),
+			Port:     viper.GetInt("POSTGRES_DB_PORT"),
 			User:     viper.GetString("POSTGRES_DB_USER"),
 			Password: viper.GetString("POSTGRES_DB_PASSWORD"),
 			DBName:   viper.GetString("POSTGRES_DB_NAME"),
-			Port:     viper.GetInt("POSTGRES_DB_PORT"),
 		},
 		MySql: struct {
 			Host     string
@@ -92,7 +92,7 @@ func ResolveDatabaseInstance() database.Contract {
 	return d
 }
 
-// ResolveLogInstance resolve dependencies and create log instance
+// ResolveLogInstance resolve global log instance
 func ResolveLogInstance() logPkg.Contract {
 	c := logPkg.Config{
 		Channel: viper.GetString("LOG_DEFAULT_CHANNEL"),
@@ -134,20 +134,21 @@ func ResolveLogInstance() logPkg.Contract {
 	return l
 }
 
-// ResolveTokenManager resolve dependencies and create jwt token manager instance
+// ResolveTokenManager resolve global jwt token manager instance
 func ResolveTokenManager(c cache.Contact) *jwt.TokenManager[int64] {
-	cfg := jwt.JWTConfig{
+	cfg := jwt.Config{
 		Secret:  viper.GetString("JWT_SECRET"),
 		Timeout: viper.GetInt("JWT_TOKEN_TIMEOUT"),
 	}
 	return jwt.NewTokenManager[int64](c, cfg)
 }
 
-// ResolveJWTMiddlewareFunc resolve dependencies and create echo jwt middleware
+// ResolveJWTMiddlewareFunc resolve global echo jwt middleware
 func ResolveJWTMiddlewareFunc(t *jwt.TokenManager[int64]) echo.MiddlewareFunc {
 	return middlewares.JwtMiddleware(t)
 }
 
+// ResolveHashingInstance  resolve global hashing instance
 func ResolveHashingInstance() hashing.Contact {
 	c := hashing.Config{
 		Driver: viper.GetString("HASHING_DRIVER"),

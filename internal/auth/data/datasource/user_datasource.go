@@ -5,15 +5,15 @@ import (
 	"github.com/kurneo/go-template/internal/auth/data/model"
 	"github.com/kurneo/go-template/internal/auth/domain/entity"
 	"github.com/kurneo/go-template/pkg/database"
-	"github.com/kurneo/go-template/pkg/support/repository"
+	"github.com/kurneo/go-template/pkg/support/db_repository"
 )
 
 type UserDatasource struct {
-	repository.Repository[model.User, entity.User, int64]
+	db_repository.Repository[model.User, entity.User, int64]
 }
 
 func (repo UserDatasource) GetUser(ctx context.Context, email string) (*entity.User, error) {
-	u, err := repo.FirstBy(ctx, repository.Equal("email", email))
+	u, err := repo.FirstBy(ctx, db_repository.Param{Condition: db_repository.Equal("email", email)})
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func (repo UserDatasource) GetUser(ctx context.Context, email string) (*entity.U
 }
 
 func (repo UserDatasource) GetUserById(ctx context.Context, id int64) (*entity.User, error) {
-	u, err := repo.FindByID(ctx, id)
+	u, err := repo.FindByID(ctx, id, db_repository.Param{})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (repo UserDatasource) UpdateLastLoginTime(ctx context.Context, user *entity
 
 func NewUserDataSource(db database.Contract) *UserDatasource {
 	return &UserDatasource{
-		repository.Repository[model.User, entity.User, int64]{
+		db_repository.Repository[model.User, entity.User, int64]{
 			D: db,
 		},
 	}

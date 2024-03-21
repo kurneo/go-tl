@@ -1,5 +1,7 @@
 package slices
 
+import "reflect"
+
 func Map[T any, R any](arr []T, f func(v T) R) []R {
 	var result []R
 	for _, item := range arr {
@@ -30,11 +32,18 @@ func Filter[T any](arr []T, f func(e T) bool) []T {
 	return result
 }
 
-func First[T any](arr []T, f func(item T) bool) *T {
+func FirstBy[T any](arr []T, f func(item T) bool) *T {
 	for _, item := range arr {
 		if f(item) {
 			return &item
 		}
+	}
+	return nil
+}
+
+func First[T any](arr []T) *T {
+	for _, item := range arr {
+		return &item
 	}
 	return nil
 }
@@ -55,11 +64,15 @@ func Unique[T any](arr []T) []T {
 	return list
 }
 
-func Contains[T interface{ comparable }](s []T, e T) bool {
+func Contains[T comparable](s []T, e T) bool {
 	for _, a := range s {
 		if a == e {
 			return true
 		}
 	}
 	return false
+}
+
+func Compare[T any](a1, a2 []T) bool {
+	return reflect.DeepEqual(a1, a2)
 }

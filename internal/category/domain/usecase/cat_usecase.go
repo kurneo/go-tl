@@ -7,7 +7,7 @@ import (
 	"github.com/kurneo/go-template/internal/category/domain/repository"
 	"github.com/kurneo/go-template/pkg/error"
 	"github.com/kurneo/go-template/pkg/log"
-	"github.com/kurneo/go-template/pkg/support/paginate"
+	"github.com/kurneo/go-template/pkg/support/page_list"
 	"time"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 type CategoryUseCaseContract interface {
-	List(ctx context.Context, filter map[string]string, sort map[string]string, page, perPage int) ([]entity.Category, *paginate.Paginator, error.Contract)
+	List(ctx context.Context, filter map[string]string, sort map[string]string, page, perPage int) (*page_list.PageList[entity.Category], error.Contract)
 	Store(ctx context.Context, dto CategoryDTO) (*entity.Category, error.Contract)
 	Get(ctx context.Context, id int64) (*entity.Category, error.Contract)
 	Update(ctx context.Context, cat *entity.Category, dto CategoryDTO) error.Contract
@@ -43,7 +43,7 @@ func (c CatUseCase) List(
 	sort map[string]string,
 	page,
 	perPage int,
-) ([]entity.Category, *paginate.Paginator, error.Contract) {
+) (*page_list.PageList[entity.Category], error.Contract) {
 	return c.r.List(ctx, filter, sort, page, perPage)
 }
 

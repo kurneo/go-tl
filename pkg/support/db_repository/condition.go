@@ -1,4 +1,4 @@
-package repository
+package db_repository
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ type join struct {
 }
 
 func (s join) GetQuery() string {
-	queries := make([]string, 0, len(s.conditions))
+	queries := make([]string, len(s.conditions))
 
 	for _, spec := range s.conditions {
 		queries = append(queries, spec.GetQuery())
@@ -21,7 +21,7 @@ func (s join) GetQuery() string {
 }
 
 func (s join) GetValues() []any {
-	values := make([]any, 0)
+	values := make([]any, len(s.conditions))
 
 	for _, spec := range s.conditions {
 		values = append(values, spec.GetValues()...)
@@ -45,41 +45,53 @@ func Or(conditions ...Condition) Condition {
 }
 
 type not struct {
-	Condition
+	c Condition
 }
 
 func (s not) GetQuery() string {
-	return fmt.Sprintf(" NOT (%s)", s.Condition.GetQuery())
+	return fmt.Sprintf(" NOT (%s)", s.c.GetQuery())
+}
+
+func (s not) GetValues() []any {
+	return s.c.GetValues()
 }
 
 func Not(condition Condition) Condition {
-	return not{condition}
+	return not{c: condition}
 }
 
-type binaryOperator[T any] struct {
+type binary[T any] struct {
 	field    string
 	operator string
 	value    T
 }
 
-func (s binaryOperator[T]) GetQuery() string {
+func (s binary[T]) GetQuery() string {
 	return fmt.Sprintf("%s %s ?", s.field, s.operator)
 }
 
-func (s binaryOperator[T]) GetValues() []any {
+func (s binary[T]) GetValues() []any {
 	return []any{s.value}
 }
 
 func Equal[T any](field string, value T) Condition {
-	return binaryOperator[T]{
+	return binary[T]{
 		field:    field,
 		operator: "=",
 		value:    value,
 	}
 }
 
+func NotEqual[T any](field string, value T) Condition {
+	return binary[T]{
+		field:    field,
+		operator: "!=",
+		value:    value,
+	}
+}
+
 func GreaterThan[T comparable](field string, value T) Condition {
-	return binaryOperator[T]{
+	return binary[T]{
 		field:    field,
 		operator: ">",
 		value:    value,
@@ -87,7 +99,7 @@ func GreaterThan[T comparable](field string, value T) Condition {
 }
 
 func GreaterOrEqual[T comparable](field string, value T) Condition {
-	return binaryOperator[T]{
+	return binary[T]{
 		field:    field,
 		operator: ">=",
 		value:    value,
@@ -95,7 +107,7 @@ func GreaterOrEqual[T comparable](field string, value T) Condition {
 }
 
 func LessThan[T comparable](field string, value T) Condition {
-	return binaryOperator[T]{
+	return binary[T]{
 		field:    field,
 		operator: "<",
 		value:    value,
@@ -103,50 +115,49 @@ func LessThan[T comparable](field string, value T) Condition {
 }
 
 func LessOrEqual[T comparable](field string, value T) Condition {
-	return binaryOperator[T]{
+	return binary[T]{
 		field:    field,
-		operator: ">=",
+		operator: "<=",
 		value:    value,
 	}
 }
 
 func Contains(field string, value string) Condition {
-	op := "like"
-	return binaryOperator[string]{
+	return binary[string]{
 		field:    field,
-		operator: op,
+		operator: "like",
 		value:    "%" + value + "%",
 	}
 }
 
-type fromToOperator[T any] struct {
+type margin[T any] struct {
 	field    string
 	operator string
 	from     T
 	to       T
 }
 
-func (s fromToOperator[T]) GetQuery() string {
+func (s margin[T]) GetQuery() string {
 	return fmt.Sprintf("%s %s ? AND ?", s.field, s.operator)
 }
 
-func (s fromToOperator[T]) GetValues() []any {
+func (s margin[T]) GetValues() []any {
 	return []any{s.from, s.to}
 }
 
 func Between[T any](field string, from T, to T) Condition {
-	return fromToOperator[T]{
+	return margin[T]{
 		field:    field,
-		operator: "between",
+		operator: "BETWEEN",
 		from:     from,
 		to:       to,
 	}
 }
 
 func NotBetween[T any](field string, from T, to T) Condition {
-	return fromToOperator[T]{
+	return margin[T]{
 		field:    field,
-		operator: "not between",
+		operator: "NOT BETWEEN",
 		from:     from,
 		to:       to,
 	}
@@ -159,7 +170,7 @@ func (s str) GetQuery() string {
 }
 
 func (s str) GetValues() []any {
-	return nil
+	return []any{}
 }
 
 func IsNull(field string) Condition {

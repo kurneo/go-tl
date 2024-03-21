@@ -6,19 +6,19 @@ import (
 	"github.com/kurneo/go-template/internal/category/domain/entity"
 	"github.com/kurneo/go-template/internal/category/domain/repository"
 	"github.com/kurneo/go-template/pkg/error"
-	"github.com/kurneo/go-template/pkg/support/paginate"
+	"github.com/kurneo/go-template/pkg/support/page_list"
 )
 
 type CatRepository struct {
 	d *datasource.CatDatasource
 }
 
-func (c CatRepository) List(ctx context.Context, filter map[string]string, sort map[string]string, page, perPage int) ([]entity.Category, *paginate.Paginator, error.Contract) {
-	l, p, err := c.d.List(ctx, filter, sort, page, perPage)
+func (c CatRepository) List(ctx context.Context, filter map[string]string, sort map[string]string, page, perPage int) (*page_list.PageList[entity.Category], error.Contract) {
+	l, err := c.d.List(ctx, filter, sort, page, perPage)
 	if err != nil {
-		return nil, nil, error.NewDatasource(err)
+		return nil, error.NewDatasource(err)
 	}
-	return l, p, nil
+	return l, nil
 }
 func (c CatRepository) Store(ctx context.Context, cat *entity.Category) error.Contract {
 	err := c.d.Store(ctx, cat)

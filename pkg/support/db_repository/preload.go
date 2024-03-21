@@ -1,4 +1,4 @@
-package repository
+package db_repository
 
 type preload struct {
 	relation  string
@@ -32,4 +32,12 @@ func With(relation string, vars ...interface{}) Preload {
 		condition: &condition,
 		columns:   columns,
 	}
+}
+
+func Withs(vars ...Preload) []Preload {
+	p := make([]Preload, len(vars))
+	for _, v := range vars {
+		p = append(p, v)
+	}
+	return p
 }

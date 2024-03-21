@@ -5,13 +5,13 @@ import (
 	"github.com/kurneo/go-template/internal/category/data/model"
 	"github.com/kurneo/go-template/internal/category/domain/entity"
 	"github.com/kurneo/go-template/pkg/database"
-	"github.com/kurneo/go-template/pkg/support/paginate"
-	"github.com/kurneo/go-template/pkg/support/repository"
+	"github.com/kurneo/go-template/pkg/support/db_repository"
+	"github.com/kurneo/go-template/pkg/support/page_list"
 	"strings"
 )
 
 type CatDatasource struct {
-	repository.Repository[model.Category, entity.Category, int64]
+	db_repository.Repository[model.Category, entity.Category, int64]
 }
 
 func (r CatDatasource) List(
@@ -20,32 +20,29 @@ func (r CatDatasource) List(
 	sort map[string]string,
 	page,
 	perPage int,
-) ([]entity.Category, *paginate.Paginator, error) {
-	var c []repository.Condition
-	c = append(c, repository.Contains("name", filters["name"]))
+) (*page_list.PageList[entity.Category], error) {
+	var c []db_repository.Condition
+	c = append(c, db_repository.Contains("name", filters["name"]))
 
 	if filters["status"] != "" {
-		c = append(c, repository.Equal[string]("status", filters["status"]))
+		c = append(c, db_repository.Equal[string]("status", filters["status"]))
 	}
 
 	if filters["created_at"] != "" {
 		createdAt := strings.Split(filters["created_at"], ",")
 		if len(createdAt) == 2 {
-			c = append(c, repository.Between[string]("created_at", createdAt[0], createdAt[1]))
+			c = append(c, db_repository.Between[string]("created_at", createdAt[0], createdAt[1]))
 		}
 	}
 
-	return r.AllBy(
+	return r.AllByWithPaginate(
 		ctx,
-		repository.And(c...),
-		nil,
-		nil,
-		[]string{
-			"*",
+		db_repository.Param{
+			Condition: db_repository.And(c...),
+			Orders:    sort,
+			Page:      page,
+			Limit:     perPage,
 		},
-		sort,
-		page,
-		perPage,
 	)
 }
 
@@ -67,11 +64,7 @@ func (r CatDatasource) Get(ctx context.Context, id int64) (*entity.Category, err
 	return r.FindByID(
 		ctx,
 		id,
-		nil,
-		nil,
-		[]string{
-			"*",
-		},
+		db_repository.Param{},
 	)
 }
 
@@ -85,7 +78,7 @@ func (r CatDatasource) Delete(ctx context.Context, cat *entity.Category) error {
 
 func NewCatDatasource(db database.Contract) *CatDatasource {
 	return &CatDatasource{
-		repository.Repository[model.Category, entity.Category, int64]{
+		db_repository.Repository[model.Category, entity.Category, int64]{
 			D: db,
 		},
 	}
