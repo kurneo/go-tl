@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	jwtPkg "github.com/kurneo/go-template/pkg/jwt"
 	httpPkg "github.com/kurneo/go-template/pkg/support/http"
 	echoJwt "github.com/labstack/echo-jwt/v4"
