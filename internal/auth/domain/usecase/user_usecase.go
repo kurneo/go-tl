@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-var (
-	ErrEmailNotFound    = errors.New("email not found")
-	ErrPasswordNotMatch = errors.New("password not match")
-)
-
 type UserUseCaseContract interface {
 	Login(ctx context.Context, e, p string) (*jwt.AccessToken[int64], error.Contract)
 	Logout(ctx context.Context, token *jwt.AccessToken[int64]) error.Contract
@@ -35,11 +30,11 @@ func (u UserUseCase) Login(ctx context.Context, e, p string) (*jwt.AccessToken[i
 	}
 
 	if user == nil {
-		return nil, error.NewDomain(ErrEmailNotFound)
+		return nil, error.NewDomain(errors.New("email not found"))
 	}
 
 	if u.p.Check(user.Password, p) == false {
-		return nil, error.NewDomain(ErrPasswordNotMatch)
+		return nil, error.NewDomain(errors.New("password not match"))
 	}
 
 	token, err := u.t.CreateToken(user)
@@ -48,9 +43,7 @@ func (u UserUseCase) Login(ctx context.Context, e, p string) (*jwt.AccessToken[i
 		return nil, err
 	}
 
-	loginTime := time.Now()
-	user.LastLoginAt = &loginTime
-	err = u.r.UpdateLastLoginTime(ctx, user)
+	err = u.r.UpdateLastLoginTime(ctx, user, time.Now())
 
 	if err != nil {
 		return nil, err

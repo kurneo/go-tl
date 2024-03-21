@@ -6,6 +6,7 @@ import (
 	"github.com/kurneo/go-template/internal/auth/domain/entity"
 	"github.com/kurneo/go-template/pkg/database"
 	"github.com/kurneo/go-template/pkg/support/db_repository"
+	"time"
 )
 
 type UserDatasource struct {
@@ -28,15 +29,16 @@ func (repo UserDatasource) GetUserById(ctx context.Context, id int64) (*entity.U
 	return u, nil
 }
 
-func (repo UserDatasource) UpdateLastLoginTime(ctx context.Context, user *entity.User) error {
+func (repo UserDatasource) UpdateLastLoginTime(ctx context.Context, user *entity.User, time time.Time) error {
 	var m model.User
-	model := m.FromEntity(*user).(*model.User)
-	err := repo.D.GetDB(ctx).Table((*model).TableName()).
-		Where("id = ?", model.ID).
-		Update("last_login_at", model.LastLoginAt).Error
+	userModel := m.FromEntity(*user).(*model.User)
+	err := repo.D.GetDB(ctx).Table((*userModel).TableName()).
+		Where("id = ?", userModel.ID).
+		Update("last_login_at", time).Error
 	if err != nil {
 		return err
 	}
+	user.LastLoginAt = &time
 	return nil
 }
 
