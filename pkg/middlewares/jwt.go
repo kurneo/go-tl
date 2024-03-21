@@ -5,15 +5,24 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	jwtPkg "github.com/kurneo/go-template/pkg/jwt"
 	httpPkg "github.com/kurneo/go-template/pkg/support/http"
+	"github.com/kurneo/go-template/pkg/support/slices"
 	echoJwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
 func JwtMiddleware(t *jwtPkg.TokenManager[int64]) echo.MiddlewareFunc {
 	secret, _ := t.GetSecret()
+	excepts := []string{
+		"/api/admin/v1/auth/login",
+	}
 	return echoJwt.WithConfig(echoJwt.Config{
 		SigningKey: secret,
 		Skipper: func(c echo.Context) bool {
+			if slices.Some[string](excepts, func(item string) bool {
+				return c.Request().URL.Path == item
+			}) {
+				return true
+			}
 			return false
 		},
 		TokenLookup: "header:Authorization:Bearer ,query:access_token",

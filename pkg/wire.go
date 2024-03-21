@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,7 @@ var WireSet = wire.NewSet(
 	ResolveTokenManager,
 	ResolveJWTMiddlewareFunc,
 	ResolveHashingInstance,
+	ResolveEcho,
 )
 
 // ResolveCacheInstance resolve dependencies and create cache instance
@@ -173,4 +175,33 @@ func ResolveHashingInstance() hashing.Contact {
 		log.Fatalf("init hashing error: %s", err)
 	}
 	return s
+}
+
+func ResolveEcho(jwtMiddleware echo.MiddlewareFunc) *echo.Echo {
+	echoApp := echo.New()
+	// configure global middleware here
+
+	c := viper.GetString("HTTP_HEADER_ALLOW_ORIGIN")
+	r := viper.GetFloat64("HTTP_API_THROTTLE_RATE_LIMIT")
+	d := viper.GetDuration("HTTP_API_THROTTLE_DECAY")
+	l := viper.GetInt("HTTP_HEADER_GZIP_LEVEL")
+	e := viper.GetString("HTTP_HEADER_EXPOSE")
+
+	if r == 0 {
+		r = 300
+	}
+
+	if d < time.Minute {
+		d = time.Minute
+	}
+
+	echoApp.Use(
+		middlewares.CorsMiddleware(strings.Split(c, ",")),
+		middlewares.RateLimiterMiddleware(r, d),
+		middlewares.GzipMiddleware(l),
+		middlewares.AddExposeHeaderMiddleware(e),
+		jwtMiddleware,
+	)
+	echoApp.HideBanner = true
+	return echoApp
 }

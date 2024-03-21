@@ -3,16 +3,17 @@ package middlewares
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 	"net/http"
 	"time"
 )
 
-func RateLimiterMiddleware() echo.MiddlewareFunc {
+func RateLimiterMiddleware(r float64, decay time.Duration) echo.MiddlewareFunc {
 	config := middleware.RateLimiterConfig{
 		Skipper: middleware.DefaultSkipper,
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-			Rate:      300,
-			ExpiresIn: time.Minute,
+			Rate:      rate.Limit(r),
+			ExpiresIn: decay,
 		}),
 		IdentifierExtractor: func(ctx echo.Context) (string, error) {
 			id := ctx.RealIP()

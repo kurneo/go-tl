@@ -76,3 +76,22 @@ func Contains[T comparable](s []T, e T) bool {
 func Compare[T any](a1, a2 []T) bool {
 	return reflect.DeepEqual(a1, a2)
 }
+
+func Some[T any](arr []T, f func(item T) bool) bool {
+	for _, v := range arr {
+		if f(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func Always[T any](arr []T, f func(item T) bool) bool {
+	c := 0
+	for _, v := range arr {
+		if f(v) {
+			c++
+		}
+	}
+	return c == len(arr)
+}

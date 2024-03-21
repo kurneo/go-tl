@@ -219,8 +219,8 @@ func (c Controller) Delete(context echo.Context) error {
 	return http.ResponseOk(context, true)
 }
 
-func (c Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
-	g := group.Group("/categories", jwtMiddleware)
+func (c Controller) RegisterRoute(group *echo.Group) {
+	g := group.Group("/categories")
 	g.GET("", c.List)
 	g.POST("", c.Store)
 	g.GET("/:id", c.Get)

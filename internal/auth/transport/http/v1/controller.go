@@ -75,11 +75,11 @@ func (ctl Controller) Logout(context echo.Context) error {
 	return http.ResponseOk(context, true)
 }
 
-func (ctl Controller) RegisterRoute(group *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
+func (ctl Controller) RegisterRoute(group *echo.Group) {
 	g := group.Group("/auth")
 	g.POST("/login", ctl.Login)
-	g.GET("/me", ctl.Me, jwtMiddleware)
-	g.POST("/logout", ctl.Logout, jwtMiddleware)
+	g.GET("/me", ctl.Me)
+	g.POST("/logout", ctl.Logout)
 }
 
 func NewHtpV1Controller(

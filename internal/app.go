@@ -8,7 +8,6 @@ import (
 	"github.com/kurneo/go-template/pkg/database"
 	"github.com/kurneo/go-template/pkg/hashing"
 	logPkg "github.com/kurneo/go-template/pkg/log"
-	"github.com/kurneo/go-template/pkg/middlewares"
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
 	"log"
@@ -34,11 +33,11 @@ type App interface {
 }
 
 type application struct {
-	echo *echo.Echo
-	lg   logPkg.Contract
-	db   database.Contract
-	c    cache.Contact
-	s    hashing.Contact
+	e  *echo.Echo
+	lg logPkg.Contract
+	db database.Contract
+	c  cache.Contact
+	s  hashing.Contact
 }
 
 // Start server with gracefully shutdown.
@@ -46,7 +45,7 @@ func (app *application) Start() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go func() {
-		if err := app.echo.Start(":" + app.getHttpPort()); err != nil && err != http.ErrServerClosed {
+		if err := app.e.Start(":" + app.getHttpPort()); err != nil && err != http.ErrServerClosed {
 			log.Fatal("Shutting down the server")
 		}
 	}()
@@ -55,7 +54,7 @@ func (app *application) Start() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	log.Println("Stop http server")
-	if err := app.echo.Shutdown(ctx); err != nil {
+	if err := app.e.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Close database connection")
@@ -87,7 +86,7 @@ func (app *application) GetHashing() hashing.Contact {
 
 // GetHttpHandler that create server
 func (app *application) GetHttpHandler() *echo.Echo {
-	return app.echo
+	return app.e
 }
 
 func (app *application) getHttpPort() string {
@@ -96,37 +95,25 @@ func (app *application) getHttpPort() string {
 
 // NewApplication make new application with can start/stop
 func NewApplication(
+	e *echo.Echo,
 	lg logPkg.Contract,
 	db database.Contract,
 	c cache.Contact,
 	s hashing.Contact,
-	jwtMiddleware echo.MiddlewareFunc,
 	authV1 *authv1.Controller,
 	catV1 *catv1.Controller,
 ) App {
 	appOnce.Do(func() {
-		echoApp := echo.New()
-		// configure global middleware here
-		echoApp.Use(
-			middlewares.CorsMiddleware(),
-			middlewares.RateLimiterMiddleware(),
-			middlewares.GzipMiddleware(),
-			middlewares.AddExposeHeaderMiddleware(),
-		)
-		echoApp.HideBanner = true
-
-		g := echoApp.Group("/api/admin/v1")
-
 		appInstance = &application{
-			echo: echoApp,
-			lg:   lg,
-			db:   db,
-			c:    c,
-			s:    s,
+			e:  e,
+			lg: lg,
+			db: db,
+			c:  c,
+			s:  s,
 		}
-
-		authV1.RegisterRoute(g, jwtMiddleware)
-		catV1.RegisterRoute(g, jwtMiddleware)
+		g := e.Group("/api/admin/v1")
+		authV1.RegisterRoute(g)
+		catV1.RegisterRoute(g)
 	})
 
 	return appInstance

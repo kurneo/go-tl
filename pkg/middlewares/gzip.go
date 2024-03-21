@@ -5,8 +5,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func GzipMiddleware() echo.MiddlewareFunc {
+func GzipMiddleware(l int) echo.MiddlewareFunc {
 	return middleware.GzipWithConfig(middleware.GzipConfig{
-		Level: 5,
+		Level: l,
 	})
 }
