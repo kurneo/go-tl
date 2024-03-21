@@ -177,15 +177,16 @@ func ResolveHashingInstance() hashing.Contact {
 	return s
 }
 
+// ResolveEcho resolve global echo instance
 func ResolveEcho(jwtMiddleware echo.MiddlewareFunc) *echo.Echo {
 	echoApp := echo.New()
 	// configure global middleware here
 
 	c := viper.GetString("HTTP_HEADER_ALLOW_ORIGIN")
-	r := viper.GetFloat64("HTTP_API_THROTTLE_RATE_LIMIT")
-	d := viper.GetDuration("HTTP_API_THROTTLE_DECAY")
 	l := viper.GetInt("HTTP_HEADER_GZIP_LEVEL")
 	e := viper.GetString("HTTP_HEADER_EXPOSE")
+	r := viper.GetFloat64("HTTP_THROTTLE_RATE_LIMIT")
+	d := viper.GetDuration("HTTP_THROTTLE_DECAY")
 
 	if r == 0 {
 		r = 300
