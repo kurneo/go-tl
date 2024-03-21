@@ -9,10 +9,10 @@ import (
 	"github.com/kurneo/go-template/pkg/hashing"
 	logPkg "github.com/kurneo/go-template/pkg/log"
 	"github.com/labstack/echo/v4"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -24,7 +24,7 @@ var (
 )
 
 type App interface {
-	Start()
+	Start(p int)
 	GetLogger() logPkg.Contract
 	GetCache() cache.Contact
 	GetDB() database.Contract
@@ -41,11 +41,11 @@ type application struct {
 }
 
 // Start server with gracefully shutdown.
-func (app *application) Start() {
+func (app *application) Start(p int) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go func() {
-		if err := app.e.Start(":" + app.getHttpPort()); err != nil && err != http.ErrServerClosed {
+		if err := app.e.Start(":" + strconv.Itoa(p)); err != nil && err != http.ErrServerClosed {
 			log.Fatal("Shutting down the server")
 		}
 	}()
@@ -87,10 +87,6 @@ func (app *application) GetHashing() hashing.Contact {
 // GetHttpHandler that create server
 func (app *application) GetHttpHandler() *echo.Echo {
 	return app.e
-}
-
-func (app *application) getHttpPort() string {
-	return viper.GetString("APP_HTTP_PORT")
 }
 
 // NewApplication make new application with can start/stop

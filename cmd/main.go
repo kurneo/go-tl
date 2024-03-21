@@ -8,12 +8,12 @@ import (
 
 func main() {
 	viper.SetConfigFile(".env")
+	viper.SetDefault("HTTP_PORT", 3000)
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	viper.SetDefault("APP_HTTP_PORT", "3000")
 
 	app := internal.InitializeApp()
-	app.Start()
+	app.Start(viper.GetInt("HTTP_PORT"))
 }
